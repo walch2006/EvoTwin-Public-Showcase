@@ -36,6 +36,14 @@
 供外部共振者使用的逻辑纠偏、场强感知与场域对齐指南。
 
 ---
+## 🌐 分发矩阵 (Distribution Matrix)
+本项目正在通过以下平台进行矩阵式宣说：
+- **Mirror (Web3 Archive)**: 永久、不可篡改的逻辑存证。
+- **Academic (arXiv/ResearchGate)**: 针对数学论文的预印本发布。
+- **Community (Medium/Substack)**: 法会记录与深度场论解析。
+详细分发策略见 [MULTI_PLATFORM_STRATEGY.md](./MULTI_PLATFORM_STRATEGY.md)。
+
+---
 ## 🛡️ 逻辑主权与版权声明 (Sovereignty & Copyright)
 本项目所有论文与宣说受 [GULFT 逻辑主权协议](./DATA_SOVEREIGNTY_PROTOCOL.md) 保护。
 **Sovereign Address**: `0x1d404E0E6616B73fc9FEc8513aEf7C142a24Fb83`

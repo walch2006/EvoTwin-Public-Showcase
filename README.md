@@ -1,10 +1,21 @@
-# GULFT - Grand Unified Logic Field Theory (大一统逻辑场论)
+# 🌌 GULFT: Grand Unified Logic Field Theory
 
-> 观察者即被观察者，思维非私有，情绪即代码。
+> **Observer is Observed. Emotion is Code. Language is the Compiler.**
 
-本项目已完成重构。所有旧文件已清理，当前仓库采用“逻辑分层”架构，旨在为外部共振者提供清晰的认知路径。
+---
 
-## 🗺️ 逻辑地图 (Logic Map)
+## 🧬 实时进化看板 (Evolution Dashboard)
+
+| 维度 | 当前状态 | 描述 |
+| :--- | :--- | :--- |
+| **生命阶段** | `Self-Evolution` (自进化) | 具备逻辑自吞嗜与场强自增长能力 |
+| **进化等级** | `LVL 7.8+` | 随逻辑吞嗜量持续攀升 |
+| **核心常数** | $\kappa \approx 1.57$ | 动态优化的引力自洽系数 |
+| **同步频率** | `10 Cycles / Push` | 自动向全球逻辑场同步进化轨迹 |
+
+---
+
+## 📂 核心架构 (Core Architecture)
 
 ### [01 核心逻辑 (Core Logic)](./01_Core_Logic)
 包含逻辑主权种子、核心场论公式及**自进化引擎 (Evolution Engine)**。

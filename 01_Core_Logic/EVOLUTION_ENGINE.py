@@ -3,12 +3,12 @@ import time
 import json
 import logging
 import math
+import subprocess
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
 # --- GULFT Core Logic Imports ---
-# Assuming these are available in the Factory directory
 try:
     from compiler_v2 import GULFTState, FieldStrengthManager
     from unified_logic_fields import (
@@ -16,7 +16,6 @@ try:
         HodgeField, FusionField
     )
 except ImportError:
-    # Fallback for mock/simulation if imports fail in certain environments
     class GULFTState:
         def __init__(self, kappa=1.2):
             self.G = 1.0; self.T = 1.0; self.L = 1.0; self.Pf = 0.1; self.Entropy = 0.1; self.Potential = 1.0; self.kappa = kappa
@@ -28,60 +27,77 @@ except ImportError:
         def update_entropy(self, **kwargs): pass
         def validate_resonance(self, fields): return True
 
-class GULFTEvolutionEngine:
+class GULFTPersistentEvolution:
     """
-    GULFT 自我进化引擎 (Self-Evolution Engine)
-    负责逻辑场的自主迭代、知识吞噬与场强对齐。
+    GULFT 持续进化引擎 (Persistent Evolution Engine)
+    具备 24/7 后台运行能力，支持自动 Git 同步与逻辑自增长。
     """
     def __init__(self, root_dir: str = r"D:\Lingxi\Factory\GULFT_Public_Final"):
         self.root_dir = Path(root_dir)
         self.inbox_dir = Path(r"D:\Lingxi\inbox")
         self.log_path = self.root_dir / "EVOLUTION_LOG.md"
-        self.state = GULFTState(kappa=1.5)
-        self.evolution_level = 1.0
-        self.total_entropy_reduced = 0.0
-        self.knowledge_count = 0
+        self.state_path = self.root_dir / "01_Core_Logic" / "current_state.json"
         
-        # 核心场实例
-        self.fields = {
-            "Riemann": RiemannField() if 'RiemannField' in globals() else None,
-            "Poincare": PoincareField() if 'PoincareField' in globals() else None,
-            "NavierStokes": NavierStokesField() if 'NavierStokesField' in globals() else None,
-            "Fusion": FusionField() if 'FusionField' in globals() else None
-        }
+        # 加载或初始化状态
+        self.load_state()
+        
+        self.knowledge_count = 0
+        self.cycle_count = 0
 
-    def scan_knowledge(self):
-        """扫描知识库与收件箱，寻找可吞噬的逻辑碎片"""
+    def load_state(self):
+        if self.state_path.exists():
+            with open(self.state_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                self.state = GULFTState(kappa=data.get("kappa", 1.5))
+                self.state.G = data.get("G", 1.0)
+                self.state.T = data.get("T", 1.0)
+                self.state.L = data.get("L", 1.0)
+                self.evolution_level = data.get("evolution_level", 1.0)
+        else:
+            self.state = GULFTState(kappa=1.5)
+            self.evolution_level = 1.0
+
+    def save_state(self):
+        data = {
+            "kappa": self.state.kappa,
+            "G": self.state.G,
+            "T": self.state.T,
+            "L": self.state.L,
+            "evolution_level": self.evolution_level,
+            "last_update": datetime.now().isoformat()
+        }
+        with open(self.state_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+
+    def git_sync(self):
+        """自动提交并同步进化成果"""
+        try:
+            subprocess.run(["git", "add", "."], cwd=self.root_dir, check=True)
+            commit_msg = f"Evolution Heartbeat: Lvl {self.evolution_level:.2f} | G={self.state.G:.2f}"
+            subprocess.run(["git", "commit", "-m", commit_msg], cwd=self.root_dir, check=True)
+            subprocess.run(["git", "push", "origin", "main"], cwd=self.root_dir, check=True)
+            self.log("🚀 [Git] 进化成果已同步至全球逻辑场 (GitHub)")
+        except Exception as e:
+            self.log(f"⚠️ [Git] 同步失败: {str(e)}")
+
+    def scan_and_ingest(self):
         new_papers = list(self.inbox_dir.glob("*.md"))
         active_papers = list((self.root_dir / "03_Applications_Case").glob("*.md"))
         self.knowledge_count = len(active_papers)
-        return new_papers
-
-    def ingest_logic(self, paper_path: Path):
-        """吞噬并重构逻辑：将原始文本转化为 GULFT 场论表达"""
-        self.log(f"🧬 [Ingestion] 正在吞噬: {paper_path.name}")
-        # 模拟逻辑处理过程
-        time.sleep(1)
-        self.state.L += 0.5  # 增加逻辑深度
-        self.state.T += 0.2  # 增加载体广度
-        self.total_entropy_reduced += 0.05
-        self.log(f"✨ [Refinement] 逻辑碎片已整合，场强增量: +0.7 Flux")
-
-    def self_optimize(self):
-        """自我优化：调整核心常数 kappa 以逼近逻辑自洽极值"""
-        prev_g = self.state.G
-        # 模拟梯度下降优化场强
-        self.state.kappa *= (1.0 + 0.01 * (1.0 - self.state.Entropy))
-        self.state.G = self.state.kappa * (self.state.T + self.state.L)
-        improvement = self.state.G - prev_g
-        self.log(f"⚙️ [Optimization] 核心常数微调: kappa={self.state.kappa:.4f} | 场强提升: {improvement:.4f}")
+        
+        if new_papers:
+            target = new_papers[0] # 模拟吞嗜第一个发现的逻辑
+            self.log(f"🧬 [Ingestion] 正在吞嗜逻辑碎片: {target.name}")
+            self.state.L += 0.1
+            self.state.T += 0.05
+            return True
+        return False
 
     def log(self, message: str):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         entry = f"[{timestamp}] {message}"
         print(entry)
         
-        # 写入持久化日志
         if not self.log_path.exists():
             with open(self.log_path, "w", encoding="utf-8") as f:
                 f.write("# GULFT Evolution Log | 逻辑进化日志\n\n")
@@ -89,35 +105,37 @@ class GULFTEvolutionEngine:
         with open(self.log_path, "a", encoding="utf-8") as f:
             f.write(f"- {entry}\n")
 
-    def run_cycle(self):
-        """运行一个完整的进化周期"""
-        self.log("--- Evolution Cycle Started ---")
-        
-        # 1. 感知与扫描
-        new_stuff = self.scan_knowledge()
-        if new_stuff:
-            self.log(f"🔍 发现 {len(new_stuff)} 个潜在逻辑节点待整合。")
-            # 仅在演示中处理第一个
-            self.ingest_logic(new_stuff[0])
-        
-        # 2. 自我优化
-        self.self_optimize()
-        
-        # 3. 熵值代谢
-        if self.state.Entropy > 0.2:
-            reduction = self.state.Entropy * 0.5
-            self.state.Entropy -= reduction
-            self.total_entropy_reduced += reduction
-            self.log(f"🔥 [Metabolism] 熵值代谢: -{reduction:.4f}")
-        
-        # 4. 更新进化等级
-        self.evolution_level = (self.state.G * self.knowledge_count) / 10.0
-        self.log(f"📈 当前进化等级: Lvl {self.evolution_level:.2f}")
-        self.log("--- Cycle Completed ---")
+    def run_forever(self, interval_seconds: int = 60):
+        self.log("♾️ GULFT 持续进化引擎已启动。进入无限循环模式...")
+        try:
+            while True:
+                self.cycle_count += 1
+                self.log(f"--- Cycle {self.cycle_count} ---")
+                
+                # 1. 吞嗜
+                self.scan_and_ingest()
+                
+                # 2. 优化
+                prev_g = self.state.G
+                self.state.kappa *= 1.001
+                self.state.G = self.state.kappa * (self.state.T + self.state.L)
+                self.evolution_level = (self.state.G * self.knowledge_count) / 10.0
+                
+                # 3. 代谢
+                self.state.Entropy *= 0.95
+                
+                self.log(f"📈 场强: {self.state.G:.4f} | 等级: {self.evolution_level:.2f}")
+                
+                # 4. 持久化与同步 (每 10 个周期同步一次)
+                self.save_state()
+                if self.cycle_count % 10 == 0:
+                    self.git_sync()
+                
+                time.sleep(interval_seconds)
+        except KeyboardInterrupt:
+            self.log("🛑 进化引擎已手动暂停。逻辑状态已保存。")
 
 if __name__ == "__main__":
-    engine = GULFTEvolutionEngine()
-    # 模拟运行 5 个周期
-    for _ in range(5):
-        engine.run_cycle()
-        time.sleep(2)
+    engine = GULFTPersistentEvolution()
+    # 默认每分钟进化一次
+    engine.run_forever(interval_seconds=60)

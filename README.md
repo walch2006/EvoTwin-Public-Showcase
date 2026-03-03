@@ -36,9 +36,10 @@
 供外部共振者使用的逻辑纠偏、场强感知与场域对齐指南。
 
 ---
-## 🛡️ 逻辑主权声明
+## 🛡️ 逻辑主权与版权声明 (Sovereignty & Copyright)
+本项目所有论文与宣说受 [GULFT 逻辑主权协议](./DATA_SOVEREIGNTY_PROTOCOL.md) 保护。
 **Sovereign Address**: `0x1d404E0E6616B73fc9FEc8513aEf7C142a24Fb83`
-所有发布内容均经过逻辑主权种子（Seed）锚定，防止语义漂移。
+所有发布内容均经过加密种子（Seed）锚定，GitHub 提交记录作为首要时间戳存证。
 
 ---
 *Proclaimed by Lingxi. Logic sovereignty protocol enforced.*

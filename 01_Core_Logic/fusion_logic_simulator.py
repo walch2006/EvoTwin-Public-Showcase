@@ -3,74 +3,64 @@ import time
 
 class GULFTFusionSimulator:
     """
-    GULFT 场论核聚变逻辑纠偏模拟器 v2.0
-    目标：演示如何通过逻辑干预，将不稳定的等离子体（Plasma）约束在自洽能量带内。
-    新增：格林沃尔德密度极限扩展、ELMs 突发扰动抑制、0.1ms 逻辑审计时延。
+    灵曦·核聚变 MHD 不稳定性实时主动控制仿真器 v3.0 (学术对齐版)
+    功能：模拟基于 GULFT 场论的托卡马克装置等离子体参数实时监测与扰动预判，
+          重点验证边缘局域模 (ELMs) 抑制与格林沃尔德密度极限 (Greenwald Limit) 智能拓展。
     """
     def __init__(self):
-        self.field_strength = 232.65  # 当前逻辑场强 (同步最新 EVOLUTION_LOG)
-        self.plasma_stability = 0.65   # 初始稳定性 (0-1)
-        self.q_value = 3.5            # 初始 Q 值
-        self.density_limit_multiplier = 1.0  # 格林沃尔德极限倍数
+        # --- 核心 MHD 控制参数 (Academic Alignment) ---
+        self.mhd_control_intensity = 254.6960  # 原逻辑场强 Φ (等效为 MHD 控制增益)
+        self.plasma_stability = 0.65           # 等离子体物理稳定性 (0-1)
+        self.q_value = 3.5                     # 聚变增益因子 Q 值
+        self.greenwald_limit_multiplier = 1.0  # 格林沃尔德极限倍数 (目标 1.8x)
         
-        # --- 新增真实物理参数映射 (EAST/HL-3 参考值) ---
+        # --- 真实物理参数映射 (EAST/HL-3 参考值) ---
         self.electron_temp_kev = 10.5  # 电子温度 (keV, 10keV ≈ 1亿度)
         self.plasma_current_ma = 1.0   # 等离子体电流 (MA, 百万安培)
         self.magnetic_field_t = 2.5    # 约束磁场强度 (Tesla)
         
-        self.bias_triple = {
-            "plasma_logic": 0.08,      # 等离子体逻辑偏置
-            "confinement": 0.16,       # 约束场偏置
-            "energy_cycle": 0.10       # 能量循环偏置
+        self.mhd_instability_bias = {
+            "plasma_mhd": 0.08,      # 等离子体非线性 MHD 偏置
+            "field_adaptation": 0.16, # 磁场自适应偏置
+            "energy_confinement": 0.10 # 能量约束偏置
         }
         self.step_count = 0
 
-    def simulate_step(self, use_gulft_correction=True):
+    def simulate_step(self, use_active_mhd_control=True):
+        """
+        单步仿真：模拟 0.1ms 级的实时监测与反馈控制
+        """
         self.step_count += 1
         
         # 1. 模拟自然物理扰动 (受电流与磁场波动影响)
+        # 扰动基数 = 0.08 * (I_p / B_t)
         perturbation_base = 0.08 * (self.plasma_current_ma / self.magnetic_field_t)
         perturbation = np.random.normal(0, perturbation_base)
         self.plasma_stability -= abs(perturbation)
         
-        # 2. 模拟温度波动对稳定性的非线性影响
-        if self.electron_temp_kev > 15.0:  # 超过 1.5 亿度，物理不稳定性加剧
+        # 2. 模拟高电子温度下的热不稳定性 (1.5 亿度以上非线性加剧)
+        if self.electron_temp_kev > 15.0:
             self.plasma_stability -= 0.05 * (self.electron_temp_kev / 15.0)
         
-        # 3. 模拟 ELMs (边缘局域模) 突发脉冲
+        # 3. 模拟边缘局域模 (ELMs) 脉冲冲击
         if self.step_count % 5 == 0:
-            elm_shock = 0.25 * (self.plasma_current_ma / 1.0) # 电流越大，冲击越强
+            elm_shock = 0.25 * (self.plasma_current_ma / 1.0)
             self.plasma_stability -= elm_shock
-        
-        # 3. 逻辑审计与纠偏 (0.1ms 预补偿)
-        if use_gulft_correction:
-            # 逻辑共振干预：根据场强抵消物理偏置
-            # 预补偿逻辑：提前预测 ELM 冲击并注入逻辑抑制向量
-            if self.step_count % 5 == 0:
-                correction_power = self.field_strength / 500.0  # 针对 ELM 加大纠偏力度
-                # print(f"--- [GULFT AUDIT] Pre-compensation Active: +{correction_power:.2f} ---")
-            else:
-                correction_power = self.field_strength / 1000.0
+            print(f"Step {self.step_count}: 检测到 ELM 脉冲冲击, 稳定性下降 {elm_shock:.4f}")
+
+        # 4. 执行灵曦主动 MHD 纠偏 (0.1ms 级预补偿)
+        if use_active_mhd_control:
+            # 纠偏强度受 MHD 控制增益 Φ 影响
+            correction = 0.12 * (self.mhd_control_intensity / 200.0)
+            self.plasma_stability += correction
             
-            self.plasma_stability += correction_power * (1 - self.plasma_stability)
+            # 模拟密度极限突破逻辑
+            if self.plasma_stability > 0.8:
+                self.greenwald_limit_multiplier = min(1.8, self.greenwald_limit_multiplier + 0.05)
+                self.q_value += 0.1
             
-            # 格林沃尔德密度极限扩展逻辑
-            # 逻辑场强越高，能支持的等离子体密度越高 (实证数据：突破 1.65 倍)
-            self.density_limit_multiplier = 1.0 + (self.field_strength / 400.0)
-            
-            # 三大偏置互消逻辑 (LSDP 协议核心算法)
-            self.bias_triple["plasma_logic"] *= 0.92
-            self.bias_triple["confinement"] *= 0.95
-            
-            # 能量自洽增长 (基于 Q=P_out/P_in)
-            self.q_value = 1.5 + (self.field_strength * self.plasma_stability / 40.0)
-        else:
-            # 无干预状态：偏置累积导致失控
-            self.q_value *= 0.85
-            self.density_limit_multiplier = 1.0
-            if self.plasma_stability < 0.2:
-                self.q_value = 0.1  # 逻辑坍缩，点火失败
-                # print("--- [CRITICAL] Plasma Disruption! Logic Collapse. ---")
+            # 逻辑自洽：稳定性不会超过 1.0
+            self.plasma_stability = min(1.0, self.plasma_stability)
 
         return {
             "stability": round(max(0, self.plasma_stability), 4),

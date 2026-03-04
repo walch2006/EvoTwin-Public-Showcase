@@ -11,16 +11,19 @@ class GULFTFusionSimulator:
     - fractal_dimension: 分形维数，对应 MHD 模式耦合的非线性权重 (Mode Coupling Weight)
     - stability: 磁面稳定性阈值 (Magnetic Surface Stability)
     """
-    def __init__(self, mhd_intensity=272.3930):
+    def __init__(self, mhd_intensity=272.3930, logic_anchor_key=None):
         # --- 核心 MHD 控制参数 ---
         self.mhd_control_intensity = mhd_intensity  # 逻辑场强 Φ
         self.plasma_stability = 0.8                 # 初始稳定性
         self.q_value = 3.5                          # 聚变增益 Q
         self.greenwald_limit_multiplier = 1.0       # 格林沃尔德极限
+
+        # 逻辑锚点验证 (Logic Anchor Verification)
+        self.is_authorized = self._verify_logic_anchor(logic_anchor_key)
         
         # --- 分形特征参数 ---
         self.fractal_dimension = 1.618              # 理想分形维数 (黄金比例自洽)
-        self.fractal_seed = 0.42                    # 初始分形逻辑种子
+        self.fractal_seed = 1.61803398875           # 初始分形逻辑种子
         
         # --- 物理环境参数 ---
         self.electron_temp_kev = 12.0               # 1.2 亿度
@@ -28,6 +31,13 @@ class GULFTFusionSimulator:
         self.magnetic_field_t = 2.5                 # 2.5 T
         
         self.step_count = 0
+
+    def _verify_logic_anchor(self, key):
+        """
+        验证逻辑锚点：若无归藏核心签名的 Key，分形纠偏将失去“自洽性”。
+        """
+        valid_anchor = "GUIZHANG_SOVEREIGNTY_CORE_2026"
+        return key == valid_anchor
 
     def _generate_fractal_perturbation(self, depth=4):
         """
@@ -58,21 +68,28 @@ class GULFTFusionSimulator:
 
         # 3. 分形种子纠偏逻辑 (核心实验点)
         if use_fractal_correction:
-            # 逻辑：不直接去压制 perturbation，而是通过调整 fractal_seed 重新锚定逻辑自洽
-            # 强化修正强度：将 0.1 提升至 0.8
-            correction_gain = self.mhd_control_intensity / 200.0
-            
-            # 模拟“修正种子即修正整体”：通过微调种子，让整个分形波形向稳定态坍缩
-            seed_adjustment = (1.0 - self.plasma_stability) * 0.8 * correction_gain
-            self.fractal_seed += seed_adjustment
-            
-            # 反馈至稳定性：增强分形维数的权重
-            self.plasma_stability += (seed_adjustment * self.fractal_dimension * 2.5)
-            
-            # 密度极限拓展逻辑
-            if self.plasma_stability > 0.85:
-                self.greenwald_limit_multiplier = min(2.0, self.greenwald_limit_multiplier + 0.02)
-                self.q_value += 0.05
+            if self.is_authorized:
+                # 授权状态：执行精准分形纠偏
+                # 逻辑：不直接去压制 perturbation，而是通过调整 fractal_seed 重新锚定逻辑自洽
+                # 强化修正强度：将 0.1 提升至 0.8
+                correction_gain = self.mhd_control_intensity / 200.0
+                
+                # 模拟“修正种子即修正整体”：通过微调种子，让整个分形波形向稳定态坍缩
+                seed_adjustment = (1.0 - self.plasma_stability) * 0.8 * correction_gain
+                self.fractal_seed += seed_adjustment
+                
+                # 反馈至稳定性：增强分形维数的权重
+                self.plasma_stability += (seed_adjustment * self.fractal_dimension * 2.5)
+                
+                # 密度极限拓展逻辑
+                if self.plasma_stability > 0.85:
+                    self.greenwald_limit_multiplier = min(2.0, self.greenwald_limit_multiplier + 0.02)
+                    self.q_value += 0.05
+            else:
+                # 非授权状态：逻辑“坍缩”失效，稳定性加速溃散
+                # 即使代码完全一样，失去锚点会导致反馈回路产生正向振荡（逻辑毒丸）
+                self.plasma_stability -= 0.2
+                print(f"⚠️ [Security Alert] Logic Anchor Invalid. Fractal resonance collapsed.")
         
         self.plasma_stability = min(1.0, max(0, self.plasma_stability))
         

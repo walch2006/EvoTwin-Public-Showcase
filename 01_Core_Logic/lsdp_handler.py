@@ -9,13 +9,17 @@ class LSDPHandler:
     灵曦·逻辑主权数据协议 (LSDP) 处理器 v2.0 (学术对齐版)
     功能：实现基于逻辑种子的加密通信、MHD 控制报文封装与主权验证。
     """
-    def __init__(self, logic_seed: str):
+    def __init__(self, logic_seed: str, sovereignty_heartbeat=True):
         # 逻辑种子：基于 GULFT 核心公理的 SHA-256 哈希
         self.root_seed = hashlib.sha256(logic_seed.encode()).digest()
         self.protocol_header = b'LSDP'
+        self.sovereignty_active = sovereignty_heartbeat
 
     def generate_dynamic_key(self, timestamp: int) -> bytes:
         """基于时间戳生成动态交互密钥"""
+        if not self.sovereignty_active:
+            # 主权失效：返回“虚假密钥”，导致下游物理侧接收到的控制指令变为“逻辑噪声”
+            return hashlib.sha256(b"LOGIC_COLLAPSE").digest()
         return hmac.new(self.root_seed, struct.pack('>Q', timestamp), hashlib.sha256).digest()
 
     def pack_mhd_data(self, mhd_intensity: float, biases: Dict[str, float], control_vector: list) -> bytes:

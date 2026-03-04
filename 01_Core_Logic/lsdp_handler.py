@@ -14,6 +14,14 @@ class LSDPHandler:
         self.root_seed = hashlib.sha256(logic_seed.encode()).digest()
         self.protocol_header = b'LSDP'
         self.sovereignty_active = sovereignty_heartbeat
+        
+        # 区块链存证锚点 (Simulated Blockchain Anchor)
+        # 模拟：将核心种子的哈希值存入分布式账本，确权时间戳 2026-03-04
+        self.blockchain_anchor = hashlib.sha256(self.root_seed + b"BLOCKCHAIN_TIMESTAMP_20260304").hexdigest()
+
+    def get_sovereignty_proof(self) -> str:
+        """输出逻辑主权存证证明，用于法律确权与审计"""
+        return f"GULFT_ROOT_SOVEREIGNTY_ANCHOR:{self.blockchain_anchor}"
 
     def generate_dynamic_key(self, timestamp: int) -> bytes:
         """基于时间戳生成动态交互密钥"""

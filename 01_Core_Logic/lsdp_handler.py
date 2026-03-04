@@ -20,6 +20,12 @@ class LSDPHandler:
 
     def pack_mhd_data(self, mhd_intensity: float, biases: Dict[str, float], control_vector: list) -> bytes:
         """
+        [逻辑黑盒隔离协议 / Blackbox Isolation Protocol]:
+        灵曦不获取原始物理参数，仅通过 LSDP 协议输出“纠偏算力流”。
+        1. 物理侧数据通过 SHA-256 签名存证，保障原始主权。
+        2. 灵曦逻辑核仅接收“扰动残差”，输出“种子修正量”。
+        3. 核心算法在逻辑层加密运行，物理侧仅见最终控制指令。
+        
         按照 LSDP 规范封装 MHD 控制报文
         报文结构：Header(4) + Timestamp(8) + MHD_Intensity(32) + Bias(24) + Control_Vector(16) + Audit(32) + Checksum(4)
         """

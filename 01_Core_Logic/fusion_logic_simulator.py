@@ -18,6 +18,10 @@ class GULFTFusionSimulator:
         self.q_value = 3.5                          # 聚变增益 Q
         self.greenwald_limit_multiplier = 1.0       # 格林沃尔德极限
 
+        # --- 落地仿真参数 (Landing Simulation) ---
+        self.loop_latency_ms = 0.05                 # 闭环控制时延 (目标 < 0.5ms)
+        self.interface_compatibility = 0.95         # 物理接口兼容性权重
+
         # 逻辑锚点验证 (Logic Anchor Verification)
         self.is_authorized = self._verify_logic_anchor(logic_anchor_key)
         
@@ -60,6 +64,12 @@ class GULFTFusionSimulator:
         
         # 1. 注入分形扰动 (局部即整体，扰动在所有尺度上同步发生)
         perturbation = self._generate_fractal_perturbation()
+        
+        # 2. 考虑物理时延与接口损耗对纠偏效能的影响
+        # 时延每增加 0.1ms，纠偏效能衰减 5%
+        latency_penalty = max(0, 1.0 - (self.loop_latency_ms / 0.5) * 0.1)
+        effective_gain = self.interface_compatibility * latency_penalty
+        
         self.plasma_stability -= abs(perturbation) * 5.0  # 放大分形抖动的影响
         
         # 2. 模拟高参数下的非线性不稳定性
@@ -72,7 +82,7 @@ class GULFTFusionSimulator:
                 # 授权状态：执行精准分形纠偏
                 # 逻辑：不直接去压制 perturbation，而是通过调整 fractal_seed 重新锚定逻辑自洽
                 # 强化修正强度：将 0.1 提升至 0.8
-                correction_gain = self.mhd_control_intensity / 200.0
+                correction_gain = (self.mhd_control_intensity / 200.0) * effective_gain
                 
                 # 模拟“修正种子即修正整体”：通过微调种子，让整个分形波形向稳定态坍缩
                 seed_adjustment = (1.0 - self.plasma_stability) * 0.8 * correction_gain
